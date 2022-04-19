@@ -11,7 +11,7 @@ from dotenv import load_dotenv
 load_dotenv()
 logging.basicConfig(
     level=logging.DEBUG,
-    filename='~/main.log',
+    filename=os.path.expanduser('~/main.log'),
     format='%(funcName)s, %(lineno)s, %(levelname)s, %(message)s',
     encoding='UTF-8',
     filemode='w'
