@@ -126,7 +126,7 @@ def check_tokens():
     var = [PRACTICUM_TOKEN, TELEGRAM_TOKEN, TELEGRAM_CHAT_ID]
     for i in var:
         if i is None:
-            logger.error(f'Отсутствует переменная {var}')
+            logger.error(f'Отсутствует переменная {i}')
             return False
     return True
 
