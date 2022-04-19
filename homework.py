@@ -11,7 +11,7 @@ from dotenv import load_dotenv
 load_dotenv()
 logging.basicConfig(
     level=logging.DEBUG,
-    filename='main.log',
+    filename='~/main.log',
     format='%(funcName)s, %(lineno)s, %(levelname)s, %(message)s',
     encoding='UTF-8',
     filemode='w'
@@ -61,15 +61,23 @@ def get_api_answer(current_timestamp):
     """
     timestamp = current_timestamp or int(time.time())
     params = {'from_date': timestamp}
-    homework_statuses = requests.get(ENDPOINT,
-                                     headers=HEADERS,
-                                     params=params
-                                     )
+    try:
+        homework_statuses = requests.get(ENDPOINT,
+                                         headers=HEADERS,
+                                         params=params
+                                         )
+    except Exception as error:
+        logging.error(f'Ошибка при запросе к основному API: {error}')
+        raise Exception(f'Ошибка при запросе к основному API: {error}')
     if homework_statuses.status_code != HTTPStatus.OK:
         status_code = homework_statuses.status_code
-        logging.error
+        logging.error(f'Ошибка {status_code}')
         raise Exception(f'Ошибка {status_code}')
-    return homework_statuses.json()
+    try:
+        return homework_statuses.json()
+    except ValueError:
+        logger.error('Ошибка парсинга ответа из формата json')
+        raise ValueError('Ошибка парсинга ответа из формата json')
 
 
 def check_response(response):
@@ -102,19 +110,25 @@ def parse_status(homework):
     Telegram строку, содержащую один из вердиктов словаря HOMEWORK_STATUSES.
     """
     if 'homework_name' not in homework:
-        raise KeyError
+        raise KeyError('Отсутствует ключ "homework_name" в ответе API')
+    if 'status' not in homework:
+        raise Exception('Отсутствует ключ "status" в ответе API')
     homework_name = homework['homework_name']
     homework_status = homework['status']
     if homework_status not in HOMEWORK_STATUSES:
-        raise Exception('Неизвестный статус работы')
+        raise Exception(f'Неизвестный статус работы: {homework_status}')
     verdict = HOMEWORK_STATUSES[homework_status]
     return f'Изменился статус проверки работы "{homework_name}". {verdict}'
 
 
 def check_tokens():
-    """Проверяет доступность переменных окружения."""
-    if all([PRACTICUM_TOKEN, TELEGRAM_TOKEN, TELEGRAM_CHAT_ID]):
-        return True
+    """Проверка токенов."""
+    var = [PRACTICUM_TOKEN, TELEGRAM_TOKEN, TELEGRAM_CHAT_ID]
+    for i in var:
+        if i is None:
+            logger.error(f'Отсутствует переменная {var}')
+            return False
+    return True
 
 
 def main():
